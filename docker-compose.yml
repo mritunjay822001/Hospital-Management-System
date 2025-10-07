@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  oracle-xe:
+    image: gvenzl/oracle-xe:18.4.0
+    container_name: oracle-xe
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      - ORACLE_PASSWORD=oracle
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5500/ords/"]
+      interval: 30s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      - oracle-xe
+    environment:
+      - DB_USER=SYSTEM
+      - DB_PASSWORD=oracle
+      - DB_CONNECTSTRING=oracle-xe:1521/XEPDB1
+      - PORT=4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
